@@ -23,7 +23,7 @@ class SearchEngine {
             results.push({word, distance: 0, type: "prefix"});
         }
 
-        const fuzzyMatches = this.trie.searchFuzzy(query, 2, limit);
+        const fuzzyMatches = this.trie.searchFuzzy(query, 2, 100);
 
         for (const result of fuzzyMatches) {
             if (!results.some(item => item.word === result.word)) {
@@ -35,7 +35,7 @@ class SearchEngine {
             if (a.type !== b.type) {
                 return a.type === "prefix" ? -1 : 1;
             }
-
+            
             if (a.distance !== b.distance) {
                 return a.distance - b.distance;
             }

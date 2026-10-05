@@ -1,76 +1,39 @@
+const fs = require("fs");
 const { performance } = require("perf_hooks");
 const SearchEngine = require("./search/searchEngine");
 
-const baseWords = [
-    "apple",
-    "application",
-    "apply",
-    "app",
-    "banana",
-    "bank",
-    "basket",
-    "strawberry",
-    "staberry",
-    "station",
-    "status",
-    "standard",
-    "street",
-    "student",
-    "study"
-];
+const words = JSON.parse(fs.readFileSync("./data/words.json", "utf-8"));
 
-function createDataset(size) {
-    const words = [];
+const sizes = [1000, 10000, 50000, 100000];
 
-    for (let i = 0; i < size; i++) {
-        const baseWord = baseWords[i % baseWords.length];
-
-        words.push(`${baseWord}${i}`);
-    }
-
-    return words;
-}
-
-const sizes = [
-    1000,
-    10000,
-    50000,
-    100000
-];
+const queries = ["app", "stawberry", "xyzxyz"];
 
 function benchmark(engine, query, iterations = 100) {
-
-    // Warm-up
     for (let i = 0; i < 10; i++) {
         engine.search(query);
     }
 
     const start = performance.now();
-
     for (let i = 0; i < iterations; i++) {
         engine.search(query);
     }
 
     const end = performance.now();
-
     return (end - start) / iterations;
 }
 
 for (const size of sizes) {
+    if (size > words.length) {
+        continue;
+    }
 
-    const words = createDataset(size);
+    console.log(`\nDataset: ${size}`);
+    const dataset = words.slice(0, size);
+    const engine = new SearchEngine(dataset);
 
-    const engine = new SearchEngine(words);
+    for (const query of queries) {
+        const time = benchmark(engine, query);
 
-    const averageTime =
-        benchmark(
-            engine,
-            "stawberry",
-            100
-        );
-
-    console.log(
-        `Dataset: ${size}`,
-        `Average: ${averageTime.toFixed(3)} ms`
-    );
+        console.log(`${query.padEnd(12)} ${time.toFixed(3)} ms`);
+    }
 }

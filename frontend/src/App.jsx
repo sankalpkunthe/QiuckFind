@@ -1,122 +1,153 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [searchTime, setSearchTime] = useState(null);
+    const [datasetSize, setDatasetSize] = useState(null);
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    useEffect(() => {
+        if (!query.trim()) {
+            setResults([]);
+            setSearchTime(null);
+            setDatasetSize(null);
+            return;
+        }
 
-      <div className="ticks"></div>
+        const controller = new AbortController();
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        const timer = setTimeout(async () => {
+            try {
+                const response = await fetch(`http://localhost:5000/search?q=${encodeURIComponent(query)}`, {signal: controller.signal});
+                const data = await response.json();
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+                setResults(data.results);
+                setSearchTime(data.time);
+                setDatasetSize(data.datasetSize);
+
+            } catch(error) {
+                if(error.name !== "AbortError") console.error("Search failed:", error);
+            }
+        }, 150);
+
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
+    }, [query]);
+
+    return (
+        <div className="container">
+            <div className="header">
+                <h1>QuickFind</h1>
+            </div>
+
+            <div className="search-wrapper">
+                <div className="search-box-container">
+                    <span className="search-icon">
+                        ⌕
+                    </span>
+
+                    <input
+                        className="search-box"
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search"
+                    />
+
+                </div>
+
+                {results.length > 0 && (
+                    <div className="results">
+                        {results.map((result) => (
+                            <div
+                                className="result"
+                                key={result.word}
+                            >
+
+                                <div>
+                                    <div className="word">
+                                        {result.word}
+                                    </div>
+                                    
+                                    <div className="meta">
+                                        <span
+                                            className={`badge ${result.type === "prefix" ? "badge-prefix" : "badge-fuzzy"}`}
+                                        >
+                                            {result.type}
+                                        </span>
+
+                                        {result.distance > 0 &&
+                                            `Distance: ${result.distance}`
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {query.trim() &&
+                    searchTime !== null &&
+                    results.length === 0 && (
+                        <div className="no-results">
+                            No matching results found.
+                        </div>
+                    )}
+            </div>
+
+            {searchTime !== null && (
+                <div className="benchmark">
+                    <div className="benchmark-header">
+                        <h3>
+                            Performance
+                        </h3>
+
+                        <div className="performance-time">
+                            Search time:{" "}
+                            <strong>
+                                {searchTime} ms
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div className="performance-grid">
+                        <div className="stat">
+                            <div className="stat-label">
+                                Dataset
+                            </div>
+
+                            <div className="stat-value">
+                                {datasetSize?.toLocaleString("en-IN")}{" "} words
+                            </div>
+                        </div>
+
+                        <div className="stat">
+                            <div className="stat-label">
+                                Query
+                            </div>
+
+                            <div className="stat-value">
+                                {query}
+                            </div>
+                        </div>
+
+                        <div className="stat">
+                            <div className="stat-label">
+                                Results
+                            </div>
+
+                            <div className="stat-value">
+                                {results.length}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
-export default App
+export default App;

@@ -17,10 +17,8 @@ class Trie {
             if(!current.children.has(char)) {
                 current.children.set(char, new TrieNode());
             }
-
             current = current.children.get(char);
         }
-
         current.isEnd = true;
     }
 
@@ -31,20 +29,16 @@ class Trie {
             if(!current.children.has(char)) {
                 return [];
             }
-
             current = current.children.get(char);
         }
 
         const results = [];
-
         this.collectWords(current, prefix, results, limit);
-
         return results;
     }
 
     collectWords(current, prefix, results, limit) {
         if(results.length >= limit) return;
-
         if(current.isEnd) {
             results.push(prefix);
         }
@@ -57,15 +51,13 @@ class Trie {
 
     searchFuzzy(query, maxi = 2, limit = 10) {
         const results = [];
-
         const initialRow = [];
 
         for(let i=0; i<=query.length; i++) {
             initialRow.push(i);
         }
 
-        this.searchFuzzyRecursive(this.root, "", query, initialRow, maxi, results, limit);
-        
+        this.searchFuzzyRecursive(this.root, "", query, initialRow, maxi, results, limit); 
         return results;
     }
 
@@ -83,11 +75,9 @@ class Trie {
             }
 
             const newWord = current + char;
-
             const rowMinimum = Math.min(...currentRow);
 
             if(rowMinimum > maxi) continue;
-
             if(childNode.isEnd && currentRow[query.length]<=maxi) {
                 results.push({word: newWord,
                     distance: currentRow[query.length]
