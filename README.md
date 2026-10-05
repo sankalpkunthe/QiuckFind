@@ -1,7 +1,6 @@
 # QuickFind
 
 A simple autocomplete and fuzzy search engine built using **Trie** and **Levenshtein distance (DP)**.
-
 QuickFind provides fast search suggestions, typo-tolerant search, result ranking, and performance benchmarking.
 
 ## Features
